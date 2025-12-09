@@ -36,26 +36,25 @@
       overflow: hidden;
     }
 
-    /* 左寄せで Notion の左に揃える */
+    /* 画面中央に配置（最初の版と同じイメージ） */
     body {
       display: flex;
       align-items: center;
-      justify-content: flex-start;
+      justify-content: center;
     }
 
     .scene {
       width: 100%;
-      max-width: 640px;
-      padding: 12px 0 12px 16px; /* 左だけ少し余白 */
+      max-width: 520px;
+      padding: 20px;
       display: flex;
       align-items: center;
-      justify-content: flex-start;
+      justify-content: center;
     }
 
     .panel {
       position: relative;
-      width: 520px;
-      max-width: 100%;
+      width: 100%;
       aspect-ratio: 16 / 9;
       border-radius: 26px;
       background: radial-gradient(circle at 0% 0%, #262626 0%, #151515 40%, #0b0b0b 100%);
@@ -63,6 +62,7 @@
         0 0 0 1px rgba(255, 255, 255, 0.03),
         0 32px 70px rgba(0, 0, 0, 0.9);
       overflow: hidden;
+      /* 3Dチルトは完全OFF：transform系は使わない */
     }
 
     .panel::before {
@@ -147,37 +147,14 @@
       box-shadow: 0 0 10px rgba(0, 224, 255, 0.8);
     }
 
-    /* === ビュー切り替え用コンテナ === */
-    .panel-views {
-      position: relative;
-      flex: 1;
-      min-height: 0;
-      margin-top: 4px;
-      margin-bottom: 4px;
-      overflow: hidden;
-    }
-
-    .view {
-      position: absolute;
-      inset: 0;
-      opacity: 0;
-      pointer-events: none;
-      transform: translateY(8px);
-      transition: opacity 0.55s ease, transform 0.55s ease;
-    }
-
-    .view.active {
-      opacity: 1;
-      pointer-events: auto;
-      transform: translateY(0);
-    }
-
+    /* メイングリッド（4カード） */
     .panel-grid {
+      flex: 1;
       display: grid;
       grid-template-columns: 1.2fr 1fr;
       grid-template-rows: 1fr 1fr;
       gap: 10px;
-      height: 100%;
+      min-height: 0;
     }
 
     .card {
@@ -244,6 +221,7 @@
       color: var(--text-faint);
     }
 
+    /* TIME */
     .card-time {
       align-items: flex-start;
       gap: 6px;
@@ -302,6 +280,7 @@
       box-shadow: 0 0 6px rgba(0, 224, 255, 0.9);
     }
 
+    /* FOCUS */
     .card-focus {
       gap: 8px;
     }
@@ -363,6 +342,7 @@
       color: var(--text-faint);
     }
 
+    /* METRICS */
     .card-metrics {
       gap: 6px;
     }
@@ -418,6 +398,7 @@
       text-transform: uppercase;
     }
 
+    /* NOTES */
     .card-notes {
       gap: 8px;
     }
@@ -475,6 +456,7 @@
       color: var(--text-faint);
     }
 
+    /* FOOTER */
     .panel-footer {
       display: flex;
       align-items: center;
@@ -506,32 +488,7 @@
       color: rgba(0, 224, 255, 0.9);
     }
 
-    /* ビューインジケータ */
-    .view-indicator {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .view-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 999px;
-      border: 1px solid rgba(255, 255, 255, 0.25);
-      background: transparent;
-      opacity: 0.6;
-    }
-
-    .view-dot.active {
-      background: rgba(0, 224, 255, 0.9);
-      box-shadow: 0 0 6px rgba(0, 224, 255, 0.9);
-      opacity: 1;
-    }
-
     @media (max-width: 480px) {
-      .scene {
-        padding: 8px;
-      }
       .panel {
         border-radius: 20px;
       }
@@ -549,7 +506,7 @@
 </head>
 <body>
   <div class="scene">
-    <div class="panel" id="panel">
+    <div class="panel">
       <div class="panel-inner">
         <!-- HEADER -->
         <div class="panel-header">
@@ -563,189 +520,91 @@
           </div>
         </div>
 
-        <!-- VIEWS -->
-        <div class="panel-views" id="panelViews">
-          <!-- VIEW 1: もともとの構成 -->
-          <div class="view active" data-index="0">
-            <div class="panel-grid">
-              <!-- TIME / DATE -->
-              <div class="card card-time">
-                <div class="card-header">
-                  <div class="card-title">LOCAL TIME</div>
-                  <div class="card-badge">JST • UTC+09</div>
-                </div>
-                <div class="time-main">
-                  <div class="time-value" id="timeValue">--:--</div>
-                  <div class="time-sub" id="timeDay">——</div>
-                  <div class="time-date" id="timeDate">— —, ————</div>
-                  <div class="time-pill">
-                    <div class="time-pill-dot"></div>
-                    <span id="timePhase">SYSTEM • IDLE</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- FOCUS / SESSION -->
-              <div class="card card-focus">
-                <div class="card-header">
-                  <div class="card-title">FOCUS SESSION</div>
-                  <div class="card-badge">MANUAL MODE</div>
-                </div>
-                <div class="focus-main">
-                  <div class="focus-row">
-                    <div>
-                      <div class="focus-label">NEXT BLOCK</div>
-                      <div class="focus-time">25&nbsp;MIN</div>
-                    </div>
-                    <div class="focus-chip">
-                      PRIME • RAD
-                    </div>
-                  </div>
-                  <div class="focus-desc">
-                    Use this panel as a visual anchor for your current focus block.
-                    Timer logic can be added later if needed.
-                  </div>
-                </div>
-              </div>
-
-              <!-- NOTES / SIGNAL -->
-              <div class="card card-notes">
-                <div class="card-header">
-                  <div class="card-title">SIGNAL NOTES</div>
-                  <div class="card-badge">INLINE GHOST</div>
-                </div>
-                <div class="notes-main">
-                  <div class="notes-line">
-                    <div class="notes-dot"></div>
-                    <div>Anchor one key intent for today.</div>
-                  </div>
-                  <div class="notes-ghost">
-                    Example: “Finish 3 cases from MSK / update Notion radiology hub.”
-                  </div>
-                  <div class="notes-tags">
-                    <div class="notes-tag">READING</div>
-                    <div class="notes-tag">IVR</div>
-                    <div class="notes-tag">NOTION</div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- METRICS -->
-              <div class="card card-metrics">
-                <div class="card-header">
-                  <div class="card-title">TODAY METRICS</div>
-                  <div class="card-badge">STATIC MOCK</div>
-                </div>
-                <div class="metrics-main">
-                  <div class="metrics-list">
-                    <div class="metric-item">
-                      <div class="metric-label">CASES</div>
-                      <div class="metric-value" id="metricCases">12</div>
-                      <div class="metric-unit">read</div>
-                    </div>
-                    <div class="metric-item">
-                      <div class="metric-label">FOCUS</div>
-                      <div class="metric-value" id="metricFocus">3.1h</div>
-                      <div class="metric-unit">deep work</div>
-                    </div>
-                  </div>
-                  <div class="metric-tagline">
-                    Link these numbers to Notion / an API later if you want real data.
-                  </div>
-                </div>
+        <!-- MAIN GRID -->
+        <div class="panel-grid">
+          <!-- TIME / DATE -->
+          <div class="card card-time">
+            <div class="card-header">
+              <div class="card-title">LOCAL TIME</div>
+              <div class="card-badge">JST • UTC+09</div>
+            </div>
+            <div class="time-main">
+              <div class="time-value" id="timeValue">--:--</div>
+              <div class="time-sub" id="timeDay">——</div>
+              <div class="time-date" id="timeDate">— —, ————</div>
+              <div class="time-pill">
+                <div class="time-pill-dot"></div>
+                <span id="timePhase">SYSTEM • IDLE</span>
               </div>
             </div>
           </div>
 
-          <!-- VIEW 2: ログ／別メトリクス -->
-          <div class="view" data-index="1">
-            <div class="panel-grid">
-              <!-- TIME SUMMARY -->
-              <div class="card card-time">
-                <div class="card-header">
-                  <div class="card-title">SESSION LOG</div>
-                  <div class="card-badge">SAMPLE DATA</div>
+          <!-- FOCUS -->
+          <div class="card card-focus">
+            <div class="card-header">
+              <div class="card-title">FOCUS SESSION</div>
+              <div class="card-badge">MANUAL MODE</div>
+            </div>
+            <div class="focus-main">
+              <div class="focus-row">
+                <div>
+                  <div class="focus-label">NEXT BLOCK</div>
+                  <div class="focus-time">25&nbsp;MIN</div>
                 </div>
-                <div class="time-main">
-                  <div class="time-sub">LAST BLOCK</div>
-                  <div class="time-value">42&nbsp;MIN</div>
-                  <div class="time-date">FOCUS • MSK / CHEST</div>
-                  <div class="time-pill">
-                    <div class="time-pill-dot"></div>
-                    <span>STATUS • COMPLETE</span>
-                  </div>
+                <div class="focus-chip">
+                  PRIME • RAD
                 </div>
               </div>
+              <div class="focus-desc">
+                Use this panel as a visual anchor for your current focus block.
+                Timer logic can be added later if needed.
+              </div>
+            </div>
+          </div>
 
-              <!-- FOCUS PRESET -->
-              <div class="card card-focus">
-                <div class="card-header">
-                  <div class="card-title">FOCUS PRESET</div>
-                  <div class="card-badge">RAD / MIX</div>
+          <!-- NOTES -->
+          <div class="card card-notes">
+            <div class="card-header">
+              <div class="card-title">SIGNAL NOTES</div>
+              <div class="card-badge">INLINE GHOST</div>
+            </div>
+            <div class="notes-main">
+              <div class="notes-line">
+                <div class="notes-dot"></div>
+                <div>Anchor one key intent for today.</div>
+              </div>
+              <div class="notes-ghost">
+                Example: “Finish 3 cases from MSK / update Notion radiology hub.”
+              </div>
+              <div class="notes-tags">
+                <div class="notes-tag">READING</div>
+                <div class="notes-tag">IVR</div>
+                <div class="notes-tag">NOTION</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- METRICS -->
+          <div class="card card-metrics">
+            <div class="card-header">
+              <div class="card-title">TODAY METRICS</div>
+              <div class="card-badge">STATIC MOCK</div>
+            </div>
+            <div class="metrics-main">
+              <div class="metrics-list">
+                <div class="metric-item">
+                  <div class="metric-label">CASES</div>
+                  <div class="metric-value" id="metricCases">12</div>
+                  <div class="metric-unit">read</div>
                 </div>
-                <div class="focus-main">
-                  <div class="focus-row">
-                    <div>
-                      <div class="focus-label">CURRENT MODE</div>
-                      <div class="focus-time">3&nbsp;×&nbsp;25</div>
-                    </div>
-                    <div class="focus-chip">
-                      BLOCK STACK
-                    </div>
-                  </div>
-                  <div class="focus-desc">
-                    3 focus blocks with short breaks.
-                    Adjust this pattern in code if you prefer
-                    different rhythm for IVR days vs reading days.
-                  </div>
+                <div class="metric-item">
+                  <div class="metric-label">FOCUS</div>
+                  <div class="metric-value" id="metricFocus">3.1h</div>
+                  <div class="metric-unit">deep work</div>
                 </div>
               </div>
-
-              <!-- NOTES ALT -->
-              <div class="card card-notes">
-                <div class="card-header">
-                  <div class="card-title">CHECKPOINTS</div>
-                  <div class="card-badge">DAILY LOOP</div>
-                </div>
-                <div class="notes-main">
-                  <div class="notes-line">
-                    <div class="notes-dot"></div>
-                    <div>One line summary of what matters today.</div>
-                  </div>
-                  <div class="notes-ghost">
-                    Example: “Keep latency low for decisions • avoid context switching.”
-                  </div>
-                  <div class="notes-tags">
-                    <div class="notes-tag">FOCUS</div>
-                    <div class="notes-tag">ENERGY</div>
-                    <div class="notes-tag">PRIORITY</div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- ALT METRICS -->
-              <div class="card card-metrics">
-                <div class="card-header">
-                  <div class="card-title">WEEK METRICS</div>
-                  <div class="card-badge">STATIC MOCK</div>
-                </div>
-                <div class="metrics-main">
-                  <div class="metrics-list">
-                    <div class="metric-item">
-                      <div class="metric-label">CASES</div>
-                      <div class="metric-value">64</div>
-                      <div class="metric-unit">this week</div>
-                    </div>
-                    <div class="metric-item">
-                      <div class="metric-label">FOCUS</div>
-                      <div class="metric-value">14.2h</div>
-                      <div class="metric-unit">deep work</div>
-                    </div>
-                  </div>
-                  <div class="metric-tagline">
-                    Swap to real numbers later or keep this as a visual-only card.
-                  </div>
-                </div>
+              <div class="metric-tagline">
+                Link these numbers to Notion / an API later if you want real data.
               </div>
             </div>
           </div>
@@ -755,14 +614,11 @@
         <div class="panel-footer">
           <div class="footer-left">
             <span class="footer-pill">NOTION • EMBED</span>
-            <span class="view-indicator">
-              <span class="view-dot active" data-dot="0"></span>
-              <span class="view-dot" data-dot="1"></span>
-            </span>
+            <span>RAD/HUB</span>
           </div>
           <div class="footer-right">
-            <span class="footer-accent">AUTO</span>
-            <span>VIEW ROTATION</span>
+            <span class="footer-accent">STABLE</span>
+            <span>NO ALERTS</span>
           </div>
         </div>
       </div>
@@ -770,14 +626,12 @@
   </div>
 
   <script>
-    // Time / Date display for JST
+    // Time / Date display for JST（元の機能そのまま）
     (function () {
       const timeEl = document.getElementById("timeValue");
       const dayEl = document.getElementById("timeDay");
       const dateEl = document.getElementById("timeDate");
       const phaseEl = document.getElementById("timePhase");
-
-      if (!timeEl) return; // 念のため
 
       const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
       const monthNames = [
@@ -823,70 +677,6 @@
 
       updateTime();
       setInterval(updateTime, 1000);
-    })();
-
-    // View rotation (auto + wheel)
-    (function () {
-      const views = Array.from(document.querySelectorAll(".view"));
-      const dots = Array.from(document.querySelectorAll(".view-dot"));
-      if (!views.length) return;
-
-      let current = 0;
-      const ROTATION_INTERVAL = 15000; // 15秒ごとに切り替え
-      let timer = null;
-
-      function setActive(index) {
-        current = (index + views.length) % views.length;
-        views.forEach((v, i) => {
-          v.classList.toggle("active", i === current);
-        });
-        dots.forEach((d, i) => {
-          d.classList.toggle("active", i === current);
-        });
-      }
-
-      function next(step) {
-        setActive(current + step);
-      }
-
-      function startTimer() {
-        stopTimer();
-        timer = setInterval(() => next(1), ROTATION_INTERVAL);
-      }
-
-      function stopTimer() {
-        if (timer) {
-          clearInterval(timer);
-          timer = null;
-        }
-      }
-
-      // 初期状態
-      setActive(0);
-      startTimer();
-
-      // ホイールで切り替え（パネル内のみ）
-      const panel = document.getElementById("panel");
-      if (panel) {
-        panel.addEventListener(
-          "wheel",
-          (e) => {
-            e.preventDefault();
-            const dir = e.deltaY > 0 ? 1 : -1;
-            next(dir);
-            startTimer(); // 手動操作後もオート継続
-          },
-          { passive: false }
-        );
-      }
-
-      // ドットクリックでも切り替え可能（PC用）
-      dots.forEach((dot, i) => {
-        dot.addEventListener("click", () => {
-          setActive(i);
-          startTimer();
-        });
-      });
     })();
   </script>
 </body>
