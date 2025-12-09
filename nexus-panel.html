@@ -1,683 +1,99 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Nexus Panel</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    :root {
-      --bg: #191919;
-      --glass-bg: rgba(15, 15, 15, 0.72);
-      --glass-inner: rgba(255, 255, 255, 0.02);
-      --border-soft: rgba(255, 255, 255, 0.16);
-      --border-subtle: rgba(255, 255, 255, 0.06);
-      --accent: #00e0ff;
-      --accent-soft: rgba(0, 224, 255, 0.48);
-      --text-main: rgba(255, 255, 255, 0.92);
-      --text-sub: rgba(255, 255, 255, 0.56);
-      --text-faint: rgba(255, 255, 255, 0.36);
-    }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pulse Arc Monitor</title>
 
-    * {
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-    }
+<style>
+  :root {
+    --bg: #191919;
+    --arc-color: rgba(0, 224, 255, 0.9);
+    --arc-fade: rgba(0, 224, 255, 0.15);
+  }
 
-    html,
-    body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      background: var(--bg);
-      color: #fff;
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
-        "SF Pro Text", system-ui, sans-serif;
-      overflow: auto;
-    }
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+  }
 
-    /* 画面中央に配置（最初の版と同じイメージ） */
-    body {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
+  .arc-container {
+    width: 90%;
+    max-width: 520px;
+    height: 200px;
+    position: relative;
+  }
 
-    .scene {
-      width: 100%;
-      max-width: 520px;
-      padding: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
+  /* アーク本体（SVG利用） */
+  svg {
+    width: 100%;
+    height: 100%;
+  }
 
-    .panel {
-      position: relative;
-      width: 100%;
-      aspect-ratio: 16 / 9;
-      border-radius: 26px;
-      background: radial-gradient(circle at 0% 0%, #262626 0%, #151515 40%, #0b0b0b 100%);
-      box-shadow:
-        0 0 0 1px rgba(255, 255, 255, 0.03),
-        0 32px 70px rgba(0, 0, 0, 0.9);
-      overflow: hidden;
-      /* 3Dチルトは完全OFF：transform系は使わない */
-    }
+  /* アークライン */
+  .arc-path {
+    stroke: var(--arc-fade);
+    stroke-width: 3px;
+    fill: none;
+  }
 
-    .panel::before {
-      content: "";
-      position: absolute;
-      inset: -40%;
-      background: conic-gradient(
-        from 210deg,
-        rgba(0, 224, 255, 0.06),
-        rgba(255, 255, 255, 0.02),
-        rgba(0, 224, 255, 0.12),
-        rgba(255, 255, 255, 0.02),
-        rgba(0, 224, 255, 0.06)
-      );
-      opacity: 0.78;
-      filter: blur(22px);
-      z-index: 0;
-    }
+  /* 流れる光 */
+  .pulse-line {
+    stroke: var(--arc-color);
+    stroke-width: 3px;
+    stroke-linecap: round;
+    stroke-dasharray: 180 400; /* 180 = 光の長さ */
+    animation: pulseFlow 4.8s linear infinite;
+    filter: drop-shadow(0 0 6px rgba(0, 224, 255, 0.8));
+  }
 
-    .panel-inner {
-      position: relative;
-      inset: 0;
-      padding: 16px 18px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      z-index: 1;
-    }
+  /* 弧全体の微妙な脈動（Scaleアニメーション） */
+  .arc-wrapper {
+    animation: arcPulse 3.5s ease-in-out infinite;
+    transform-origin: center;
+  }
 
-    .panel-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding-bottom: 6px;
-    }
+  @keyframes pulseFlow {
+    0% { stroke-dashoffset: 0; }
+    100% { stroke-dashoffset: -580; }
+  }
 
-    .panel-header-left {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
+  @keyframes arcPulse {
+    0% { transform: scale(1); opacity: 0.92; }
+    50% { transform: scale(1.015); opacity: 1; }
+    100% { transform: scale(1); opacity: 0.92; }
+  }
 
-    .panel-title {
-      font-size: 13px;
-      font-weight: 600;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--text-main);
-    }
-
-    .panel-subtitle {
-      font-size: 10px;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--text-sub);
-    }
-
-    .panel-tag {
-      padding: 4px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      background: linear-gradient(
-        135deg,
-        rgba(255, 255, 255, 0.04),
-        rgba(0, 0, 0, 0.4)
-      );
-      font-size: 9px;
-      text-transform: uppercase;
-      letter-spacing: 0.16em;
-      color: var(--text-sub);
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .tag-dot {
-      width: 5px;
-      height: 5px;
-      border-radius: 999px;
-      background: var(--accent-soft);
-      box-shadow: 0 0 10px rgba(0, 224, 255, 0.8);
-    }
-
-    /* メイングリッド（4カード） */
-    .panel-grid {
-      flex: 1;
-      display: grid;
-      grid-template-columns: 1.2fr 1fr;
-      grid-template-rows: 1fr 1fr;
-      gap: 10px;
-      min-height: 0;
-    }
-
-    .card {
-      position: relative;
-      border-radius: 18px;
-      background: linear-gradient(
-          135deg,
-          rgba(255, 255, 255, 0.06),
-          rgba(255, 255, 255, 0.01)
-        ),
-        var(--glass-bg);
-      border: 1px solid var(--border-soft);
-      box-shadow:
-        0 0 0 1px rgba(255, 255, 255, 0.02),
-        0 12px 26px rgba(0, 0, 0, 0.8);
-      backdrop-filter: blur(22px) saturate(150%);
-      -webkit-backdrop-filter: blur(22px) saturate(150%);
-      padding: 10px 12px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      overflow: hidden;
-    }
-
-    .card::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(
-        circle at 0% 0%,
-        rgba(255, 255, 255, 0.14),
-        transparent 55%
-      );
-      opacity: 0.16;
-      pointer-events: none;
-    }
-
-    .card-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 4px;
-      margin-bottom: 6px;
-      position: relative;
-      z-index: 1;
-    }
-
-    .card-title {
-      font-size: 10px;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--text-sub);
-      white-space: nowrap;
-    }
-
-    .card-badge {
-      padding: 2px 8px;
-      border-radius: 999px;
-      border: 1px solid var(--border-subtle);
-      background: rgba(0, 0, 0, 0.45);
-      font-size: 9px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--text-faint);
-    }
-
-    /* TIME */
-    .card-time {
-      align-items: flex-start;
-      gap: 6px;
-    }
-
-    .time-main {
-      position: relative;
-      z-index: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .time-value {
-      font-size: 28px;
-      font-weight: 500;
-      letter-spacing: 0.12em;
-      color: var(--text-main);
-    }
-
-    .time-sub {
-      font-size: 10px;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--text-sub);
-    }
-
-    .time-date {
-      font-size: 10px;
-      color: var(--text-sub);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      margin-top: 8px;
-    }
-
-    .time-pill {
-      margin-top: 8px;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 9px;
-      border-radius: 999px;
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      background: rgba(0, 0, 0, 0.6);
-      font-size: 9px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--text-sub);
-    }
-
-    .time-pill-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 999px;
-      background: var(--accent-soft);
-      box-shadow: 0 0 6px rgba(0, 224, 255, 0.9);
-    }
-
-    /* FOCUS */
-    .card-focus {
-      gap: 8px;
-    }
-
-    .focus-main {
-      position: relative;
-      z-index: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .focus-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-    }
-
-    .focus-label {
-      font-size: 10px;
-      color: var(--text-sub);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    .focus-time {
-      font-size: 16px;
-      letter-spacing: 0.12em;
-      color: var(--text-main);
-    }
-
-    .focus-chip {
-      padding: 4px 9px;
-      border-radius: 999px;
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      background: rgba(0, 0, 0, 0.6);
-      font-size: 9px;
-      text-transform: uppercase;
-      letter-spacing: 0.14em;
-      color: var(--text-sub);
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .focus-chip::before {
-      content: "";
-      width: 6px;
-      height: 6px;
-      border-radius: 999px;
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.8);
-    }
-
-    .focus-desc {
-      font-size: 10px;
-      line-height: 1.6;
-      color: var(--text-faint);
-    }
-
-    /* METRICS */
-    .card-metrics {
-      gap: 6px;
-    }
-
-    .metrics-main {
-      position: relative;
-      z-index: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .metrics-list {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
-    }
-
-    .metric-item {
-      padding: 6px 8px;
-      border-radius: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      background: rgba(0, 0, 0, 0.65);
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .metric-label {
-      font-size: 9px;
-      color: var(--text-faint);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    .metric-value {
-      font-size: 13px;
-      color: var(--text-main);
-      letter-spacing: 0.06em;
-    }
-
-    .metric-unit {
-      font-size: 9px;
-      color: var(--text-sub);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    .metric-tagline {
-      font-size: 9px;
-      color: var(--text-faint);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    /* NOTES */
-    .card-notes {
-      gap: 8px;
-    }
-
-    .notes-main {
-      position: relative;
-      z-index: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .notes-line {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 10px;
-      color: var(--text-sub);
-    }
-
-    .notes-dot {
-      width: 28px;
-      height: 1px;
-      border-radius: 999px;
-      background: linear-gradient(
-        90deg,
-        rgba(0, 224, 255, 0.6),
-        rgba(0, 224, 255, 0.1),
-        transparent
-      );
-      box-shadow: 0 0 8px rgba(0, 224, 255, 0.8);
-    }
-
-    .notes-ghost {
-      font-size: 10px;
-      color: var(--text-faint);
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-    }
-
-    .notes-tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-
-    .notes-tag {
-      padding: 3px 8px;
-      border-radius: 999px;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      background: rgba(0, 0, 0, 0.7);
-      font-size: 9px;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--text-faint);
-    }
-
-    /* FOOTER */
-    .panel-footer {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding-top: 4px;
-      border-top: 1px solid rgba(255, 255, 255, 0.06);
-      margin-top: 2px;
-    }
-
-    .footer-left,
-    .footer-right {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 9px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--text-faint);
-    }
-
-    .footer-pill {
-      padding: 3px 8px;
-      border-radius: 999px;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      background: rgba(0, 0, 0, 0.7);
-    }
-
-    .footer-accent {
-      color: rgba(0, 224, 255, 0.9);
-    }
-
-    @media (max-width: 480px) {
-      .panel {
-        border-radius: 20px;
-      }
-      .panel-inner {
-        padding: 12px;
-      }
-      .panel-grid {
-        gap: 8px;
-      }
-      .time-value {
-        font-size: 24px;
-      }
-    }
-  </style>
+</style>
 </head>
+
 <body>
-  <div class="scene">
-    <div class="panel">
-      <div class="panel-inner">
-        <!-- HEADER -->
-        <div class="panel-header">
-          <div class="panel-header-left">
-            <div class="panel-title">NEXUS PANEL</div>
-            <div class="panel-subtitle">RADIANT CONTROL SURFACE</div>
-          </div>
-          <div class="panel-tag">
-            <span class="tag-dot"></span>
-            RAD / SYSTEM
-          </div>
-        </div>
+  <div class="arc-container">
+    <svg viewBox="0 0 500 200">
+      <g class="arc-wrapper">
+        <!-- 弧のベースライン -->
+        <path
+          class="arc-path"
+          d="M 40 160
+             Q 250 40 460 160"
+        />
 
-        <!-- MAIN GRID -->
-        <div class="panel-grid">
-          <!-- TIME / DATE -->
-          <div class="card card-time">
-            <div class="card-header">
-              <div class="card-title">LOCAL TIME</div>
-              <div class="card-badge">JST • UTC+09</div>
-            </div>
-            <div class="time-main">
-              <div class="time-value" id="timeValue">--:--</div>
-              <div class="time-sub" id="timeDay">——</div>
-              <div class="time-date" id="timeDate">— —, ————</div>
-              <div class="time-pill">
-                <div class="time-pill-dot"></div>
-                <span id="timePhase">SYSTEM • IDLE</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- FOCUS -->
-          <div class="card card-focus">
-            <div class="card-header">
-              <div class="card-title">FOCUS SESSION</div>
-              <div class="card-badge">MANUAL MODE</div>
-            </div>
-            <div class="focus-main">
-              <div class="focus-row">
-                <div>
-                  <div class="focus-label">NEXT BLOCK</div>
-                  <div class="focus-time">25&nbsp;MIN</div>
-                </div>
-                <div class="focus-chip">
-                  PRIME • RAD
-                </div>
-              </div>
-              <div class="focus-desc">
-                Use this panel as a visual anchor for your current focus block.
-                Timer logic can be added later if needed.
-              </div>
-            </div>
-          </div>
-
-          <!-- NOTES -->
-          <div class="card card-notes">
-            <div class="card-header">
-              <div class="card-title">SIGNAL NOTES</div>
-              <div class="card-badge">INLINE GHOST</div>
-            </div>
-            <div class="notes-main">
-              <div class="notes-line">
-                <div class="notes-dot"></div>
-                <div>Anchor one key intent for today.</div>
-              </div>
-              <div class="notes-ghost">
-                Example: “Finish 3 cases from MSK / update Notion radiology hub.”
-              </div>
-              <div class="notes-tags">
-                <div class="notes-tag">READING</div>
-                <div class="notes-tag">IVR</div>
-                <div class="notes-tag">NOTION</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- METRICS -->
-          <div class="card card-metrics">
-            <div class="card-header">
-              <div class="card-title">TODAY METRICS</div>
-              <div class="card-badge">STATIC MOCK</div>
-            </div>
-            <div class="metrics-main">
-              <div class="metrics-list">
-                <div class="metric-item">
-                  <div class="metric-label">CASES</div>
-                  <div class="metric-value" id="metricCases">12</div>
-                  <div class="metric-unit">read</div>
-                </div>
-                <div class="metric-item">
-                  <div class="metric-label">FOCUS</div>
-                  <div class="metric-value" id="metricFocus">3.1h</div>
-                  <div class="metric-unit">deep work</div>
-                </div>
-              </div>
-              <div class="metric-tagline">
-                Link these numbers to Notion / an API later if you want real data.
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- FOOTER -->
-        <div class="panel-footer">
-          <div class="footer-left">
-            <span class="footer-pill">NOTION • EMBED</span>
-            <span>RAD/HUB</span>
-          </div>
-          <div class="footer-right">
-            <span class="footer-accent">STABLE</span>
-            <span>NO ALERTS</span>
-          </div>
-        </div>
-      </div>
-    </div>
+        <!-- 流れる光 -->
+        <path
+          class="pulse-line"
+          d="M 40 160
+             Q 250 40 460 160"
+        />
+      </g>
+    </svg>
   </div>
-
-  <script>
-    // Time / Date display for JST（元の機能そのまま）
-    (function () {
-      const timeEl = document.getElementById("timeValue");
-      const dayEl = document.getElementById("timeDay");
-      const dateEl = document.getElementById("timeDate");
-      const phaseEl = document.getElementById("timePhase");
-
-      const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
-      const monthNames = [
-        "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
-        "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"
-      ];
-
-      function updateTime() {
-        const now = new Date();
-        const jstOffset = 9 * 60;
-        const localOffset = now.getTimezoneOffset();
-        const jstTime = new Date(now.getTime() + (jstOffset + localOffset) * 60000);
-
-        const h = jstTime.getHours().toString().padStart(2, "0");
-        const m = jstTime.getMinutes().toString().padStart(2, "0");
-
-        const dIdx = jstTime.getDay();
-        const d = jstTime.getDate().toString().padStart(2, "0");
-        const monthIdx = jstTime.getMonth();
-        const y = jstTime.getFullYear();
-
-        timeEl.textContent = `${h}:${m}`;
-        dayEl.textContent = dayNames[dIdx] + " • JST";
-        dateEl.textContent = `${d} ${monthNames[monthIdx]} ${y}`;
-
-        let phase = "";
-        const hour = jstTime.getHours();
-        if (hour < 5) {
-          phase = "SYSTEM • LATE BLOCK";
-        } else if (hour < 9) {
-          phase = "SYSTEM • EARLY START";
-        } else if (hour < 13) {
-          phase = "SYSTEM • PRIME HOURS";
-        } else if (hour < 18) {
-          phase = "SYSTEM • CORE HOURS";
-        } else if (hour < 22) {
-          phase = "SYSTEM • EVENING SHIFT";
-        } else {
-          phase = "SYSTEM • COOL DOWN";
-        }
-        phaseEl.textContent = phase;
-      }
-
-      updateTime();
-      setInterval(updateTime, 1000);
-    })();
-  </script>
 </body>
 </html>
