@@ -2,147 +2,334 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <title>Hologram Knowledge Card</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Particle Wave Pulse</title>
   <style>
     :root {
       --bg: #191919;
+      --card-bg: rgba(12, 12, 12, 0.9);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --accent-1: #00e0ff;
+      --accent-2: #7b5cff;
+      --accent-3: #38e9a3;
+      --text-main: rgba(255, 255, 255, 0.92);
+      --text-sub: rgba(255, 255, 255, 0.72);
+      --text-faint: rgba(255, 255, 255, 0.45);
     }
 
-    html, body {
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html,
+    body {
       margin: 0;
       padding: 0;
       width: 100%;
       height: 100%;
       background: var(--bg);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+        system-ui, sans-serif;
       display: flex;
       align-items: center;
       justify-content: center;
       overflow: hidden;
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
-        system-ui, sans-serif;
     }
 
-    .wave-container {
-      width: 95%;
-      max-width: 1000px;
-      height: 260px;
-      position: relative;
-    }
-
-    canvas {
+    .scene {
       width: 100%;
-      height: 100%;
-      display: block;
+      max-width: 520px;
+      padding: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .holo-card {
+      position: relative;
+      width: 100%;
+      border-radius: 22px;
+      padding: 18px 20px 16px;
+      background: radial-gradient(circle at 0% 0%, #20242a 0%, #101114 42%, #050506 100%);
+      border: 1px solid var(--card-border);
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.02),
+        0 28px 60px rgba(0, 0, 0, 0.9);
+      color: var(--text-main);
+      overflow: hidden;
+      cursor: default;
+      backdrop-filter: blur(22px) saturate(160%);
+      -webkit-backdrop-filter: blur(22px) saturate(160%);
+      transition:
+        box-shadow 0.4s ease,
+        transform 0.4s ease;
+    }
+
+    /* ホログラム縁取り */
+    .holo-card::before {
+      content: "";
+      position: absolute;
+      inset: -80%;
+      background: conic-gradient(
+        from 210deg,
+        rgba(0, 224, 255, 0.0),
+        rgba(0, 224, 255, 0.7),
+        rgba(123, 92, 255, 0.8),
+        rgba(56, 233, 163, 0.7),
+        rgba(0, 224, 255, 0.0)
+      );
+      opacity: 0.38;
+      filter: blur(26px);
+      transform: translate3d(0, 0, -1px);
+      z-index: 0;
+      animation: holoSweep 16s linear infinite;
+    }
+
+    /* 内側の微妙なグロー */
+    .holo-card::after {
+      content: "";
+      position: absolute;
+      inset: 1px;
+      border-radius: 20px;
+      background:
+        radial-gradient(circle at 0% 0%, rgba(0, 224, 255, 0.15), transparent 55%),
+        radial-gradient(circle at 100% 100%, rgba(123, 92, 255, 0.12), transparent 55%);
+      opacity: 0.55;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .holo-inner {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .holo-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .holo-header-left {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .holo-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: rgba(0, 0, 0, 0.6);
+      font-size: 9px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+    }
+
+    .holo-tag-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(0, 224, 255, 0.9);
+      box-shadow: 0 0 8px rgba(0, 224, 255, 0.9);
+    }
+
+    .holo-title {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-main);
+    }
+
+    .holo-pill {
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.08),
+        rgba(0, 0, 0, 0.6)
+      );
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--text-sub);
+      white-space: nowrap;
+    }
+
+    .holo-body {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 2px;
+    }
+
+    .holo-main-title {
+      font-size: 16px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      color: var(--text-main);
+    }
+
+    .holo-subtitle {
+      font-size: 11px;
+      color: var(--text-sub);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .holo-description {
+      margin-top: 4px;
+      font-size: 11px;
+      line-height: 1.6;
+      color: var(--text-faint);
+    }
+
+    .holo-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 6px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255, 255, 255, 0.09);
+    }
+
+    .holo-meta-group {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .holo-meta-label {
+      font-size: 9px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+    }
+
+    .holo-meta-value {
+      font-size: 11px;
+      color: var(--text-sub);
+    }
+
+    .holo-meta-pill {
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(0, 0, 0, 0.7);
+      font-size: 9px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(0, 224, 255, 0.9);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .holo-meta-pill-dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 999px;
+      background: rgba(0, 224, 255, 0.9);
+      box-shadow: 0 0 6px rgba(0, 224, 255, 0.9);
+    }
+
+    /* hover時の軽い持ち上がりと発光 */
+    .holo-card:hover {
+      box-shadow:
+        0 0 0 1px rgba(0, 224, 255, 0.45),
+        0 32px 70px rgba(0, 0, 0, 1);
+      transform: translateY(-2px);
+    }
+
+    @keyframes holoSweep {
+      0% {
+        transform: translate3d(0, 0, -1px) rotate(0deg);
+      }
+      100% {
+        transform: translate3d(0, 0, -1px) rotate(360deg);
+      }
+    }
+
+    @media (max-width: 480px) {
+      .scene {
+        padding: 12px;
+      }
+      .holo-card {
+        border-radius: 18px;
+        padding: 14px 14px 12px;
+      }
+      .holo-title {
+        font-size: 13px;
+      }
+      .holo-main-title {
+        font-size: 14px;
+      }
+      .holo-description {
+        font-size: 10px;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="wave-container">
-    <canvas id="waveCanvas"></canvas>
+  <div class="scene">
+    <div class="holo-card">
+      <div class="holo-inner">
+        <!-- HEADER -->
+        <div class="holo-header">
+          <div class="holo-header-left">
+            <div class="holo-tag">
+              <span class="holo-tag-dot"></span>
+              RAD • NOTE
+            </div>
+            <div class="holo-title">HOLOGRAM KNOWLEDGE CARD</div>
+          </div>
+          <div class="holo-pill">
+            CHEST • MRI
+          </div>
+        </div>
+
+        <!-- BODY -->
+        <div class="holo-body">
+          <div class="holo-subtitle">CASE SNAPSHOT</div>
+          <div class="holo-main-title">
+            Diffuse pachymeningeal enhancement in hypotension
+          </div>
+          <div class="holo-description">
+            Key imaging cues, differential list, and “do not miss” points for
+            daily reading. Use this card as a compact anchor and link out to
+            full Notion page if needed.
+          </div>
+        </div>
+
+        <!-- META -->
+        <div class="holo-meta">
+          <div class="holo-meta-group">
+            <div class="holo-meta-label">CATEGORY</div>
+            <div class="holo-meta-value">NEURO • DURAL</div>
+          </div>
+          <div class="holo-meta-group">
+            <div class="holo-meta-label">LAST UPDATE</div>
+            <div class="holo-meta-value">2025-12-09</div>
+          </div>
+          <div class="holo-meta-pill">
+            <span class="holo-meta-pill-dot"></span>
+            LINKED TO NOTION
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
-
-  <script>
-    (function () {
-      const canvas = document.getElementById("waveCanvas");
-      const ctx = canvas.getContext("2d");
-
-      const dpr = window.devicePixelRatio || 1;
-      let width, height, centerY;
-
-      function resize() {
-        const rect = canvas.getBoundingClientRect();
-        width = rect.width;
-        height = rect.height;
-        canvas.width = width * dpr;
-        canvas.height = height * dpr;
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        centerY = height / 2;
-      }
-
-      window.addEventListener("resize", resize);
-      resize();
-
-      let t = 0;
-
-      function lerpColor(c1, c2, t) {
-        return [
-          c1[0] + (c2[0] - c1[0]) * t,
-          c1[1] + (c2[1] - c1[1]) * t,
-          c1[2] + (c2[2] - c1[2]) * t,
-        ];
-      }
-
-      function draw() {
-        ctx.clearRect(0, 0, width, height);
-
-        // 背景を薄く塗って残像感を少し出す
-        ctx.fillStyle = "rgba(25, 25, 25, 1)";
-        ctx.fillRect(0, 0, width, height);
-
-        const baseAmp = height * 0.22;
-        const secondaryAmp = height * 0.12;
-        const step = 6; // 点と点の間隔
-
-        // カラーキー：左→右
-        const cLeft = [0, 240, 255];   // シアン
-        const cMid  = [80, 120, 255];  // ブルー
-        const cRight= [190, 80, 255];  // パープル
-
-        for (let x = 0; x <= width; x += step) {
-          const normX = x / width; // 0〜1
-
-          // 波形：基本波 + 補助波 + 時間変化
-          const angle = normX * Math.PI * 2;
-          const y =
-            centerY +
-            Math.sin(angle * 1.2 + t * 0.9) * baseAmp +
-            Math.cos(angle * 2.3 - t * 1.3) * secondaryAmp;
-
-          // カラー補間（左→中央→右の3点）
-          let col;
-          if (normX < 0.5) {
-            const tt = normX / 0.5;
-            col = lerpColor(cLeft, cMid, tt);
-          } else {
-            const tt = (normX - 0.5) / 0.5;
-            col = lerpColor(cMid, cRight, tt);
-          }
-
-          const alpha = 0.9;
-          ctx.fillStyle = `rgba(${col[0]}, ${col[1]}, ${col[2]}, ${alpha})`;
-
-          // 点を描画
-          const radius = 1.4 + Math.sin(t * 1.2 + normX * 10) * 0.4;
-          ctx.beginPath();
-          ctx.arc(x, y, radius, 0, Math.PI * 2);
-          ctx.fill();
-        }
-
-        // 全体の柔らかい光（グロー）
-        const grad = ctx.createLinearGradient(0, 0, 0, height);
-        grad.addColorStop(
-          0,
-          "rgba(0, 224, 255, 0.22)"
-        );
-        grad.addColorStop(
-          0.5,
-          "rgba(120, 120, 255, 0.16)"
-        );
-        grad.addColorStop(
-          1,
-          "rgba(190, 80, 255, 0.12)"
-        );
-
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, centerY - baseAmp * 1.2, width, baseAmp * 2.4);
-
-        t += 0.02;
-        requestAnimationFrame(draw);
-      }
-
-      draw();
-    })();
-  </script>
 </body>
 </html>
