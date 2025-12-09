@@ -39,7 +39,7 @@
 
     .scene {
       width: 100%;
-      max-width: 520px;
+      max-width: 680px;
       padding: 18px;
       display: flex;
       align-items: center;
@@ -58,7 +58,7 @@
         0 28px 60px rgba(0, 0, 0, 0.9);
       color: var(--text-main);
       overflow: hidden;
-      cursor: default;
+      cursor: pointer;  /* ← クリック可能な見た目 */
       backdrop-filter: blur(22px) saturate(160%);
       -webkit-backdrop-filter: blur(22px) saturate(160%);
       transition:
@@ -284,7 +284,8 @@
 </head>
 <body>
   <div class="scene">
-    <div class="holo-card">
+    <!-- data-url に開きたい Notion ページのURLを入れる -->
+    <div class="holo-card" data-url="https://www.notion.so/your-notion-page-url">
       <div class="holo-inner">
         <!-- HEADER -->
         <div class="holo-header">
@@ -330,6 +331,4 @@
         </div>
       </div>
     </div>
-  </div>
-</body>
-</html>
+  </d
