@@ -3,12 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pulse Arc Monitor</title>
+  <title>Particle Wave Pulse</title>
   <style>
     :root {
       --bg: #191919;
-      --arc-color: rgba(0, 224, 255, 0.9);
-      --arc-fade: rgba(0, 224, 255, 0.15);
     }
 
     html, body {
@@ -21,67 +19,130 @@
       align-items: center;
       justify-content: center;
       overflow: hidden;
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+        system-ui, sans-serif;
     }
 
-    .arc-container {
-      width: 90%;
-      max-width: 520px;
-      height: 200px;
+    .wave-container {
+      width: 95%;
+      max-width: 1000px;
+      height: 260px;
       position: relative;
     }
 
-    svg {
+    canvas {
       width: 100%;
       height: 100%;
-    }
-
-    .arc-path {
-      stroke: var(--arc-fade);
-      stroke-width: 3px;
-      fill: none;
-    }
-
-    .pulse-line {
-      stroke: var(--arc-color);
-      stroke-width: 3px;
-      stroke-linecap: round;
-      stroke-dasharray: 180 400;
-      animation: pulseFlow 4.8s linear infinite;
-      filter: drop-shadow(0 0 6px rgba(0, 224, 255, 0.8));
-    }
-
-    .arc-wrapper {
-      animation: arcPulse 3.5s ease-in-out infinite;
-      transform-origin: center;
-    }
-
-    @keyframes pulseFlow {
-      0%   { stroke-dashoffset: 0;   }
-      100% { stroke-dashoffset: -580; }
-    }
-
-    @keyframes arcPulse {
-      0%   { transform: scale(1);     opacity: 0.92; }
-      50%  { transform: scale(1.015); opacity: 1;    }
-      100% { transform: scale(1);     opacity: 0.92; }
+      display: block;
     }
   </style>
 </head>
 <body>
-  <div class="arc-container">
-    <svg viewBox="0 0 500 200">
-      <g class="arc-wrapper">
-        <path
-          class="arc-path"
-          d="M 40 160
-             Q 250 40 460 160" />
-        <path
-          class="pulse-line"
-          d="M 40 160
-             Q 250 40 460 160" />
-      </g>
-    </svg>
+  <div class="wave-container">
+    <canvas id="waveCanvas"></canvas>
   </div>
+
+  <script>
+    (function () {
+      const canvas = document.getElementById("waveCanvas");
+      const ctx = canvas.getContext("2d");
+
+      const dpr = window.devicePixelRatio || 1;
+      let width, height, centerY;
+
+      function resize() {
+        const rect = canvas.getBoundingClientRect();
+        width = rect.width;
+        height = rect.height;
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        centerY = height / 2;
+      }
+
+      window.addEventListener("resize", resize);
+      resize();
+
+      let t = 0;
+
+      function lerpColor(c1, c2, t) {
+        return [
+          c1[0] + (c2[0] - c1[0]) * t,
+          c1[1] + (c2[1] - c1[1]) * t,
+          c1[2] + (c2[2] - c1[2]) * t,
+        ];
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, width, height);
+
+        // 背景を薄く塗って残像感を少し出す
+        ctx.fillStyle = "rgba(25, 25, 25, 1)";
+        ctx.fillRect(0, 0, width, height);
+
+        const baseAmp = height * 0.22;
+        const secondaryAmp = height * 0.12;
+        const step = 6; // 点と点の間隔
+
+        // カラーキー：左→右
+        const cLeft = [0, 240, 255];   // シアン
+        const cMid  = [80, 120, 255];  // ブルー
+        const cRight= [190, 80, 255];  // パープル
+
+        for (let x = 0; x <= width; x += step) {
+          const normX = x / width; // 0〜1
+
+          // 波形：基本波 + 補助波 + 時間変化
+          const angle = normX * Math.PI * 2;
+          const y =
+            centerY +
+            Math.sin(angle * 1.2 + t * 0.9) * baseAmp +
+            Math.cos(angle * 2.3 - t * 1.3) * secondaryAmp;
+
+          // カラー補間（左→中央→右の3点）
+          let col;
+          if (normX < 0.5) {
+            const tt = normX / 0.5;
+            col = lerpColor(cLeft, cMid, tt);
+          } else {
+            const tt = (normX - 0.5) / 0.5;
+            col = lerpColor(cMid, cRight, tt);
+          }
+
+          const alpha = 0.9;
+          ctx.fillStyle = `rgba(${col[0]}, ${col[1]}, ${col[2]}, ${alpha})`;
+
+          // 点を描画
+          const radius = 1.4 + Math.sin(t * 1.2 + normX * 10) * 0.4;
+          ctx.beginPath();
+          ctx.arc(x, y, radius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // 全体の柔らかい光（グロー）
+        const grad = ctx.createLinearGradient(0, 0, 0, height);
+        grad.addColorStop(
+          0,
+          "rgba(0, 224, 255, 0.22)"
+        );
+        grad.addColorStop(
+          0.5,
+          "rgba(120, 120, 255, 0.16)"
+        );
+        grad.addColorStop(
+          1,
+          "rgba(190, 80, 255, 0.12)"
+        );
+
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, centerY - baseAmp * 1.2, width, baseAmp * 2.4);
+
+        t += 0.02;
+        requestAnimationFrame(draw);
+      }
+
+      draw();
+    })();
+  </script>
 </body>
 </html>
