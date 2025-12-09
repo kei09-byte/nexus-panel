@@ -2,19 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Hologram Knowledge Card</title>
+  <title>Radiant Flow Field</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     :root {
       --bg: #191919;
-      --card-bg: rgba(12, 12, 12, 0.9);
-      --card-border: rgba(255, 255, 255, 0.08);
-      --accent-1: #00e0ff;
-      --accent-2: #7b5cff;
-      --accent-3: #38e9a3;
-      --text-main: rgba(255, 255, 255, 0.92);
-      --text-sub: rgba(255, 255, 255, 0.72);
-      --text-faint: rgba(255, 255, 255, 0.45);
     }
 
     * {
@@ -29,306 +21,158 @@
       width: 100%;
       height: 100%;
       background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
         system-ui, sans-serif;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
     }
 
-    .scene {
+    .flow-container {
       width: 100%;
-      max-width: 680px;
-      padding: 18px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .holo-card {
+      max-width: 1100px;   /* Notion の本文幅に近いサイズ */
+      height: 220px;       /* 時計の少し上〜下ぐらいの高さ */
       position: relative;
-      width: 100%;
-      border-radius: 22px;
-      padding: 18px 20px 16px;
-      background: radial-gradient(circle at 0% 0%, #20242a 0%, #101114 42%, #050506 100%);
-      border: 1px solid var(--card-border);
-      box-shadow:
-        0 0 0 1px rgba(255, 255, 255, 0.02),
-        0 28px 60px rgba(0, 0, 0, 0.9);
-      color: var(--text-main);
+      border-radius: 26px;
       overflow: hidden;
-      cursor: pointer;  /* ← クリック可能な見た目 */
-      backdrop-filter: blur(22px) saturate(160%);
-      -webkit-backdrop-filter: blur(22px) saturate(160%);
-      transition:
-        box-shadow 0.4s ease,
-        transform 0.4s ease;
+      background: radial-gradient(circle at 50% 0%,
+        rgba(0, 224, 255, 0.12),
+        rgba(10, 10, 10, 0.96) 60%);
+      box-shadow:
+        0 18px 45px rgba(0, 0, 0, 0.85),
+        0 0 0 1px rgba(255, 255, 255, 0.02);
     }
 
-    /* ホログラム縁取り */
-    .holo-card::before {
-      content: "";
-      position: absolute;
-      inset: -80%;
-      background: conic-gradient(
-        from 210deg,
-        rgba(0, 224, 255, 0.0),
-        rgba(0, 224, 255, 0.7),
-        rgba(123, 92, 255, 0.8),
-        rgba(56, 233, 163, 0.7),
-        rgba(0, 224, 255, 0.0)
-      );
-      opacity: 0.38;
-      filter: blur(26px);
-      transform: translate3d(0, 0, -1px);
-      z-index: 0;
-      animation: holoSweep 16s linear infinite;
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
     }
 
-    /* 内側の微妙なグロー */
-    .holo-card::after {
-      content: "";
-      position: absolute;
-      inset: 1px;
-      border-radius: 20px;
-      background:
-        radial-gradient(circle at 0% 0%, rgba(0, 224, 255, 0.15), transparent 55%),
-        radial-gradient(circle at 100% 100%, rgba(123, 92, 255, 0.12), transparent 55%);
-      opacity: 0.55;
+    /* 上に薄いグラデーションフィルムを被せて、Notion背景になじませる */
+    .film {
       pointer-events: none;
-      z-index: 0;
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(
+          135deg,
+          rgba(0, 224, 255, 0.16),
+          rgba(23, 37, 84, 0.4),
+          rgba(76, 29, 149, 0.32)
+        );
+      mix-blend-mode: screen;
+      opacity: 0.45;
     }
 
-    .holo-inner {
-      position: relative;
-      z-index: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .holo-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-    }
-
-    .holo-header-left {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .holo-tag {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 3px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      background: rgba(0, 0, 0, 0.6);
-      font-size: 9px;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--text-faint);
-    }
-
-    .holo-tag-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 999px;
-      background: rgba(0, 224, 255, 0.9);
-      box-shadow: 0 0 8px rgba(0, 224, 255, 0.9);
-    }
-
-    .holo-title {
-      font-size: 15px;
-      font-weight: 600;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--text-main);
-    }
-
-    .holo-pill {
-      padding: 4px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      background: linear-gradient(
-        135deg,
-        rgba(255, 255, 255, 0.08),
-        rgba(0, 0, 0, 0.6)
-      );
-      font-size: 9px;
-      text-transform: uppercase;
-      letter-spacing: 0.16em;
-      color: var(--text-sub);
-      white-space: nowrap;
-    }
-
-    .holo-body {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      margin-top: 2px;
-    }
-
-    .holo-main-title {
-      font-size: 16px;
-      font-weight: 500;
-      letter-spacing: 0.04em;
-      color: var(--text-main);
-    }
-
-    .holo-subtitle {
-      font-size: 11px;
-      color: var(--text-sub);
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-    }
-
-    .holo-description {
-      margin-top: 4px;
-      font-size: 11px;
-      line-height: 1.6;
-      color: var(--text-faint);
-    }
-
-    .holo-meta {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      margin-top: 6px;
-      padding-top: 8px;
-      border-top: 1px solid rgba(255, 255, 255, 0.09);
-    }
-
-    .holo-meta-group {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .holo-meta-label {
-      font-size: 9px;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-      color: var(--text-faint);
-    }
-
-    .holo-meta-value {
-      font-size: 11px;
-      color: var(--text-sub);
-    }
-
-    .holo-meta-pill {
-      padding: 3px 8px;
-      border-radius: 999px;
-      border: 1px solid rgba(255, 255, 255, 0.16);
-      background: rgba(0, 0, 0, 0.7);
-      font-size: 9px;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: rgba(0, 224, 255, 0.9);
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .holo-meta-pill-dot {
-      width: 4px;
-      height: 4px;
-      border-radius: 999px;
-      background: rgba(0, 224, 255, 0.9);
-      box-shadow: 0 0 6px rgba(0, 224, 255, 0.9);
-    }
-
-    /* hover時の軽い持ち上がりと発光 */
-    .holo-card:hover {
-      box-shadow:
-        0 0 0 1px rgba(0, 224, 255, 0.45),
-        0 32px 70px rgba(0, 0, 0, 1);
-      transform: translateY(-2px);
-    }
-
-    @keyframes holoSweep {
-      0% {
-        transform: translate3d(0, 0, -1px) rotate(0deg);
-      }
-      100% {
-        transform: translate3d(0, 0, -1px) rotate(360deg);
-      }
-    }
-
-    @media (max-width: 480px) {
-      .scene {
-        padding: 12px;
-      }
-      .holo-card {
-        border-radius: 18px;
-        padding: 14px 14px 12px;
-      }
-      .holo-title {
-        font-size: 13px;
-      }
-      .holo-main-title {
-        font-size: 14px;
-      }
-      .holo-description {
-        font-size: 10px;
-      }
+    .grain {
+      pointer-events: none;
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='2' stitchTiles='noStitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E");
+      mix-blend-mode: soft-light;
+      opacity: 0.35;
     }
   </style>
 </head>
 <body>
-  <div class="scene">
-    <!-- data-url に開きたい Notion ページのURLを入れる -->
-    <div class="holo-card" data-url="https://www.notion.so/your-notion-page-url">
-      <div class="holo-inner">
-        <!-- HEADER -->
-        <div class="holo-header">
-          <div class="holo-header-left">
-            <div class="holo-tag">
-              <span class="holo-tag-dot"></span>
-              RAD • NOTE
-            </div>
-            <div class="holo-title">HOLOGRAM KNOWLEDGE CARD</div>
-          </div>
-          <div class="holo-pill">
-            CHEST • MRI
-          </div>
-        </div>
+  <div class="flow-container">
+    <canvas id="flowCanvas"></canvas>
+    <div class="film"></div>
+    <div class="grain"></div>
+  </div>
 
-        <!-- BODY -->
-        <div class="holo-body">
-          <div class="holo-subtitle">CASE SNAPSHOT</div>
-          <div class="holo-main-title">
-            Diffuse pachymeningeal enhancement in hypotension
-          </div>
-          <div class="holo-description">
-            Key imaging cues, differential list, and “do not miss” points for
-            daily reading. Use this card as a compact anchor and link out to
-            full Notion page if needed.
-          </div>
-        </div>
+  <script>
+    (function () {
+      const canvas = document.getElementById("flowCanvas");
+      const ctx = canvas.getContext("2d");
 
-        <!-- META -->
-        <div class="holo-meta">
-          <div class="holo-meta-group">
-            <div class="holo-meta-label">CATEGORY</div>
-            <div class="holo-meta-value">NEURO • DURAL</div>
-          </div>
-          <div class="holo-meta-group">
-            <div class="holo-meta-label">LAST UPDATE</div>
-            <div class="holo-meta-value">2025-12-09</div>
-          </div>
-          <div class="holo-meta-pill">
-            <span class="holo-meta-pill-dot"></span>
-            LINKED TO NOTION
-          </div>
-        </div>
-      </div>
-    </div>
-  </d
+      const dpr = window.devicePixelRatio || 1;
+      let width, height, centerY;
+
+      function resize() {
+        const rect = canvas.getBoundingClientRect();
+        width = rect.width;
+        height = rect.height;
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        centerY = height / 2;
+      }
+
+      window.addEventListener("resize", resize);
+      resize();
+
+      let t = 0;
+
+      function lerpColor(c1, c2, t) {
+        return [
+          c1[0] + (c2[0] - c1[0]) * t,
+          c1[1] + (c2[1] - c1[1]) * t,
+          c1[2] + (c2[2] - c1[2]) * t,
+        ];
+      }
+
+      function drawLayer(offsetT, ampBase, ampDetail, alphaBase, thickness) {
+        const step = 6; // 点と点の間隔（小さいほど細かい）
+        const cLeft = [56, 189, 248];   // シアン寄り
+        const cMid  = [59, 130, 246];   // ブルー寄り
+        const cRight= [147, 51, 234];   // パープル寄り
+
+        for (let x = 0; x <= width; x += step) {
+          const nx = x / width;
+          const a = nx * Math.PI * 2;
+
+          const base = Math.sin(a * 1.1 + t * 0.7 + offsetT) * ampBase;
+          const detail = Math.cos(a * 3.3 - t * 1.4 - offsetT) * ampDetail;
+          const y = centerY + base + detail;
+
+          // カラー補間（左→中央→右）
+          let col;
+          if (nx < 0.5) {
+            const tt = nx / 0.5;
+            col = lerpColor(cLeft, cMid, tt);
+          } else {
+            const tt = (nx - 0.5) / 0.5;
+            col = lerpColor(cMid, cRight, tt);
+          }
+
+          const alpha = alphaBase * (0.6 + 0.4 * Math.sin(t * 0.8 + nx * 5));
+          ctx.fillStyle = `rgba(${col[0]}, ${col[1]}, ${col[2]}, ${alpha})`;
+
+          const r = thickness * (0.9 + 0.4 * Math.sin(t * 1.2 + nx * 12 + offsetT));
+          ctx.beginPath();
+          ctx.arc(x, y, r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      function render() {
+        ctx.clearRect(0, 0, width, height);
+
+        // 背景を少しだけ暗く塗る（残像感は出さずクリーンに）
+        ctx.fillStyle = "rgba(12, 12, 12, 1)";
+        ctx.fillRect(0, 0, width, height);
+
+        const ampBase = height * 0.20;
+        const ampDetail = height * 0.09;
+
+        // 奥のレイヤー（ぼんやり）
+        drawLayer(0.0, ampBase * 0.9, ampDetail * 0.7, 0.22, 1.3);
+
+        // 中間レイヤー
+        drawLayer(1.2, ampBase * 0.7, ampDetail * 0.9, 0.30, 1.6);
+
+        // 手前レイヤー（少しだけ明るい）
+        drawLayer(2.4, ampBase * 0.5, ampDetail * 1.1, 0.38, 1.9);
+
+        t += 0.015; // 速度：ゆっくり流れるくらい
+        requestAnimationFrame(render);
+      }
+
+      render();
+    })();
+  </script>
+</body>
+</html>
